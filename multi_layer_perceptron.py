@@ -27,6 +27,55 @@ def main():
             out = tf.nn.softmax(out)
         return out
 
+    # network parameters
+    n_input = mnist.train.images.shape[1]
+    n_classes = mnist.train.labels.shape[1]
+    n_hidden1 = (n_input + n_classes) // 3
+    n_hidden2 = n_hidden1 // 2
+
+    # input
+    x = tf.placeholder(tf.float32, shape=(None, n_input))
+    y = tf.placeholder(tf.float32, shape=(None, n_classes))
+
+    # weights and biases
+    weights = {
+        'W1':
+        tf.Variable(
+            tf.random_normal(shape=(n_input, n_hidden1), stddev=0.1),
+            name='weights'),
+        'W2':
+        tf.Variable(
+            tf.random_normal(shape=(n_hidden1, n_hidden2), stddev=0.1),
+            name='weights'),
+        'W3':
+        tf.Variable(
+            tf.random_normal(shape=(n_hidden2, n_classes), stddev=0.1),
+            name='weights')
+    }
+    biases = {
+        'b1':
+        tf.Variable(
+            tf.random_normal(shape=[n_hidden1], stddev=0.1), name='biases'),
+        'b2':
+        tf.Variable(
+            tf.random_normal(shape=[n_hidden2], stddev=0.1), name='biases'),
+        'b3':
+        tf.Variable(
+            tf.random_normal(shape=[n_classes], stddev=0.1), name='biases')
+    }
+
+    # construct a model
+    pred = MLP(x, weights, biases)
+
+    # define loss funtion and optimizer
+    learning_rate = 0.001
+    cross_entropy = tf.reduce_mean(
+        tf.nn.softmax_cross_entropy_with_logits(pred, y))
+    train_step = tf.train.AdamOptimizer(learning_rate).minimize(cross_entropy)
+
+    # initailize variables
+    init = tf.global_variables_initializer()
+
 
 if __name__ == '__main__':
     main()
