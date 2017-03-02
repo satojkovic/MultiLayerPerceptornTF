@@ -3,6 +3,7 @@
 
 import tensorflow as tf
 from tensorflow.examples.tutorials.mnist import input_data
+import numpy as np
 
 
 def main():
@@ -12,19 +13,22 @@ def main():
     print('Test data: {}'.format(mnist.test.images.shape))
     print('Test labels: {}'.format(mnist.test.labels.shape))
 
-    def MLP(x, weights, biases):
+    def MLP(x, weights, biases, net={}):
         # hidden layer1 with sigmoid function
         with tf.name_scope('hidden_layer1') as scope:
             hidden1 = tf.add(tf.matmul(x, weights['W1']), biases['b1'])
             hidden1 = tf.sigmoid(hidden1)
+            net['hidden1'] = hidden1
         # hidden layer2 with sigmoid function
         with tf.name_scope('hidden_layer2') as scope:
             hidden2 = tf.add(tf.matmul(hidden1, weights['W2']), biases['b2'])
             hidden2 = tf.sigmoid(hidden2)
+            net['hidden2'] = hidden2
         # output layer with softmax function
         with tf.name_scope('output_layer') as scope:
             out = tf.add(tf.matmul(hidden2, weights['W3']), biases['b3'])
             out = tf.nn.softmax(out)
+            net['out'] = out
         return out
 
     # network parameters
@@ -63,14 +67,15 @@ def main():
         tf.Variable(
             tf.random_normal(shape=[n_classes], stddev=0.1), name='biases')
     }
+    net = {}
 
     # construct a model
-    pred = MLP(x, weights, biases)
+    pred = MLP(x, weights, biases, net)
 
     # define loss funtion and optimizer
     learning_rate = 0.001
     cross_entropy = tf.reduce_mean(
-        tf.nn.softmax_cross_entropy_with_logits(pred, y))
+        tf.nn.softmax_cross_entropy_with_logits(labels=y, logits=pred))
     tf.summary.scalar('cross_entropy', cross_entropy)
     train_step = tf.train.AdamOptimizer(learning_rate).minimize(cross_entropy)
 
@@ -99,6 +104,10 @@ def main():
             if epoch % display_step == 0:
                 print("Epoch %04d" % (epoch + 1),
                       "cost = {:.9f}".format(avg_cost))
+                for k in net.keys():
+                    [out] = sess.run([net[k]], feed_dict=feed_dict)
+                    print("{0:11s}{1}.mean: {2}".format(' ', k,
+                                                        np.array(out).mean()))
                 summary_str = sess.run(summary_op, feed_dict=feed_dict)
                 summary_writer.add_summary(summary_str, epoch)
         print("Training finished.")
